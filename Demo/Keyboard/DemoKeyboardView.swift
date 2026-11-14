@@ -1,22 +1,21 @@
+
 //
 //  DemoKeyboardView.swift
-//  Keyboard
+//  SmartBoard iOS
 //
-//  Created by Daniel Saidi on 2025-07-14.
-//  Copyright © 2025 Daniel Saidi. All rights reserved.
+//  Baseado no OpenKeyboardKit
+//  Personalização inicial do SmartBoard
 //
 
 import OpenKeyboardKit
 import SwiftUI
 
-/// This demo-specific keyboard view sets up a `KeyboardView`
-/// and customizes it with basic features.
+/// Interface principal do SmartBoard.
 struct DemoKeyboardView: View {
 
     let services: Keyboard.Services
     let state: Keyboard.State
 
-    // ‼️ Observe the context to make sure that it updates.
     @EnvironmentObject var keyboardContext: KeyboardContext
 
     var body: some View {
@@ -32,68 +31,66 @@ struct DemoKeyboardView: View {
                 Keyboard.Toolbar {
                     HStack {
                         Spacer()
-                        Text("Autocomplete can be tested in the Pro demo.")
+
+                        Text("SmartBoard")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+
                         Spacer()
                     }
                 }
             }
         )
 
-        // 💡 Customize the style of any keyboard button.
+        // Mantém o estilo padrão das teclas.
         .keyboardButtonStyle { params in
-            let context = keyboardContext
-            var style = params.standardStyle(for: context)
-            guard params.action == .backspace else { return style }
-            style.backgroundColor = params.isPressed ? .yellow : .blue
-            return style
+            params.standardStyle(for: keyboardContext)
         }
 
-        // 💡 Setup custom callout actions
-        .keyboardCalloutActions { params in                 // Apply custom actions to "K" key
-            if case .character(let char) = params.action, char == "K" {
-                return .init(characters: String("keyboardkit".reversed()))
-            }
-            return params.standardActions(for: keyboardContext)
+        // Mantém os caracteres alternativos
+        // oferecidos pelo OpenKeyboardKit.
+        .keyboardCalloutActions { params in
+            params.standardActions(for: keyboardContext)
         }
-
-        // 💡 Customize the style of the entire keyboard.
-        .keyboardViewStyle(
-            .init(background: .color(.green))
-        )
-
-        // 💡 Customize other custom view styles as well.
-        .keyboardToolbarStyle(
-            .init(backgroundColor: .red)
-        )
     }
 }
+
+// MARK: - Layout personalizado
 
 private extension DemoKeyboardView {
 
-    // 💡 Setup a custom keyboard layout
     var layout: KeyboardLayout {
-        NSLog("Creating a custom layout")
-        var layout = KeyboardLayout.standard(for: keyboardContext)
-        guard keyboardContext.keyboardType == .alphabetic else { return layout }
-        var item = layout.createIdealItem(for: .character("!"))
-        item.size.width = .input
-        layout.itemRows.insert(item, after: .space)
-        return layout
-    }
-}
 
-private extension KeyboardAction {
+        // Carrega o layout padrão do teclado.
+        var layout = KeyboardLayout.standard(
+            for: keyboardContext
+        )
 
-    var customCalloutActions: [KeyboardAction]? {
-        switch self {
-        case .character(let char): customCalloutAction(for: char)
-        default: nil
+        // Adiciona os números somente
+        // quando o teclado é alfabético.
+        guard keyboardContext.keyboardType == .alphabetic else {
+            return layout
         }
-    }
 
-    func customCalloutAction(for char: String) -> [KeyboardAction]? {
-        guard char.lowercased() == "k" else { return nil }
-        let custom = String("keyboardkit".reversed())
-        return [KeyboardAction].init(characters: custom)
+        // Cria a linha numérica permanente.
+        let numberRow = "1234567890".map { number in
+
+            var item = layout.createIdealItem(
+                for: .character(String(number))
+            )
+
+            // Utiliza o tamanho padrão
+            // das teclas de digitação.
+            item.size.width = .input
+
+            return item
+        }
+
+        // Insere a linha numérica acima
+        // das linhas de letras.
+        layout.itemRows.insert(numberRow, at: 0)
+
+        return layout
     }
 }
