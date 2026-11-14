@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-ios:
-    name: Compilar SmartBoard
+    name: Compilar OpenKeyboardKit
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -27,28 +27,14 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Identificar projetos e schemes
+      - name: Resolver dependencias Swift
         run: |
-          xcodebuild -list \
-            -project Demo/Demo.xcodeproj
+          swift package resolve
 
-      - name: Resolver dependencias
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -project Demo/Demo.xcodeproj
-
-      - name: Compilar aplicativo de demonstracao
+      - name: Compilar biblioteca OpenKeyboardKit
         run: |
           set -o pipefail
-
-          xcodebuild build \
-            -project Demo/Demo.xcodeproj \
-            -scheme Demo \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee build.log
+          swift build 2>&1 | tee build.log
 
       - name: Salvar log de compilacao
         if: always()
