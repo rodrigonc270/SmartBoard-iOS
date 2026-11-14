@@ -48,8 +48,7 @@ struct DemoKeyboardView: View {
             params.standardStyle(for: keyboardContext)
         }
 
-        // Mantém os caracteres alternativos
-        // oferecidos pelo OpenKeyboardKit.
+        // Mantém os caracteres alternativos.
         .keyboardCalloutActions { params in
             params.standardActions(for: keyboardContext)
         }
@@ -67,6 +66,10 @@ private extension DemoKeyboardView {
             for: keyboardContext
         )
 
+        // SmartBoard: altura inicial das teclas.
+        // Valor experimental em pontos.
+        layout.idealItemHeight = 65
+
         // Adiciona os números somente
         // quando o teclado é alfabético.
         guard keyboardContext.keyboardType == .alphabetic else {
@@ -80,7 +83,7 @@ private extension DemoKeyboardView {
                 for: .character(String(number))
             )
 
-            // Utiliza o tamanho padrão
+            // Utiliza a largura padrão
             // das teclas de digitação.
             item.size.width = .input
 
