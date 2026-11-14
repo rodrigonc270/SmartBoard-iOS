@@ -47,7 +47,7 @@
 		A9DBBFF32CF476AE007B48F4 /* DemoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9DBBFF12CF4767C007B48F4 /* DemoSheet.swift */; };
 		A9DBBFF52CF483D6007B48F4 /* HostAppInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9DBBFF42CF483D6007B48F4 /* HostAppInfoSheet.swift */; };
 		A9DBBFF82CF485FD007B48F4 /* FullDocumentContextSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9DBBFEE2CF4757C007B48F4 /* FullDocumentContextSheet.swift */; };
-		A9EAA6CB27B1527300BC9376 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9EAA6CA27B1527300BC9376 /* KeyboardKit */; };
+		A9EAA6CB27B1527300BC9376 /* OpenKeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9EAA6CA27B1527300BC9376 /* OpenKeyboardKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -127,7 +127,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A9EAA6CB27B1527300BC9376 /* KeyboardKit in Frameworks */,
+				A9EAA6CB27B1527300BC9376 /* OpenKeyboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,7 +352,7 @@
 			);
 			name = Keyboard;
 			packageProductDependencies = (
-				A9EAA6CA27B1527300BC9376 /* KeyboardKit */,
+				A9EAA6CA27B1527300BC9376 /* OpenKeyboardKit */,
 			);
 			productName = Keyboard;
 			productReference = A921153925D58AC7003510D9 /* Keyboard.appex */;
@@ -408,6 +408,7 @@
 			);
 			mainGroup = A921151925D58A94003510D9;
 			packageReferences = (
+				B0123456789ABCDEF0123456 /* XCLocalSwiftPackageReference ".." */,
 			);
 			productRefGroup = A921152325D58A94003510D9 /* Products */;
 			projectDirPath = "";
@@ -832,6 +833,13 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		B0123456789ABCDEF0123456 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		A9187B232C3445D100FCC412 /* KeyboardKitPro */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -870,9 +878,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = KeyboardKitPro;
 		};
-		A9EAA6CA27B1527300BC9376 /* KeyboardKit */ = {
+		A9EAA6CA27B1527300BC9376 /* OpenKeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = KeyboardKit;
+			package = B0123456789ABCDEF0123456 /* XCLocalSwiftPackageReference ".." */;
+			productName = OpenKeyboardKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
