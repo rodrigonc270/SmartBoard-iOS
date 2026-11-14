@@ -32,11 +32,6 @@ jobs:
         run: |
           swift package resolve
 
-      - name: Listar schemes disponiveis
-        run: |
-          xcodebuild -list \
-            -packagePath .
-
       - name: Compilar OpenKeyboardKit para iOS
         run: |
           set -o pipefail
