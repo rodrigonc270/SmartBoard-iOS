@@ -1,91 +1,100 @@
+
 //
 //  StandardSpeechRecognizer.swift
-//  Demo
+//  SmartBoard iOS
 //
-//  Created by Daniel Saidi on 2023-12-12.
-//  Copyright © 2023-2025 Daniel Saidi. All rights reserved.
+//  Reconhecimento de voz com APIs nativas da Apple.
+//  Sem dependencias do KeyboardKitPro.
 //
 
-// This code is copied from the online documentation, and is
-// used to enable dictation. The reason why this code is not
-// in the KeyboardKitPro SDK, is that importing Speech would
-// require all apps to add permission requests to Info.plist,
-// even when not using dictation.
-
+import Foundation
 import Speech
-import KeyboardKitPro
+import AVFoundation
 
-import KeyboardKitPro
-import Speech
+public final class StandardSpeechRecognizer {
 
-public extension DictationSpeechRecognizer where Self == StandardSpeechRecognizer {
-
-    static var standard: Self { .init() }
-}
-
-public class StandardSpeechRecognizer: DictationSpeechRecognizer {
-
-    public init() {}
+    public static let standard = StandardSpeechRecognizer()
 
     private var recognizer: SFSpeechRecognizer?
     private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var speechRecognizerTask: SFSpeechRecognitionTask?
+    private var recognitionTask: SFSpeechRecognitionTask?
 
-    private typealias Err = Dictation.ServiceError
+    public init() {}
 
-    public var authorizationStatus: Dictation.AuthorizationStatus {
-        SFSpeechRecognizer.authorizationStatus().keyboardDictationStatus
+    public var authorizationStatus: SFSpeechRecognizerAuthorizationStatus {
+        SFSpeechRecognizer.authorizationStatus()
     }
 
     public var supportedLocales: [Locale] {
         Array(SFSpeechRecognizer.supportedLocales())
     }
 
-    public func requestDictationAuthorization() async throws -> Dictation.AuthorizationStatus {
+    public func requestDictationAuthorization() async
+        -> SFSpeechRecognizerAuthorizationStatus {
+
         await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: status.keyboardDictationStatus)
+                continuation.resume(returning: status)
             }
         }
     }
 
-    public func resetDictationResult() async throws {}
-
-    public func startDictation(
-        with locale: Locale
-    ) async throws {
-        try await startDictation(
-            with: locale,
-            resultHandler: nil
-        )
-    }
-
     public func startDictation(
         with locale: Locale,
-        resultHandler: ((Dictation.SpeechRecognizerResult) -> Void)?
-    ) async throws {
-        recognizer = SFSpeechRecognizer(locale: locale)
-        guard let recognizer else { throw Err.missingSpeechRecognizer }
-        request = SFSpeechAudioBufferRecognitionRequest()
-        request?.shouldReportPartialResults = true
-        guard let request else { throw Err.missingSpeechRecognitionRequest }
-        speechRecognizerTask = recognizer.recognitionTask(with: request) {
-            let result = Dictation.SpeechRecognizerResult(
-                dictatedText: $0?.bestTranscription.formattedString,
-                error: $1,
-                isFinal: $0?.isFinal ?? true)
-            resultHandler?(result)
+        resultHandler: @escaping (String, Bool, Error?) -> Void
+    ) throws {
+
+        stopDictation()
+
+        guard let speechRecognizer = SFSpeechRecognizer(locale: locale) else {
+            throw SpeechRecognizerError.unavailable
+        }
+
+        guard speechRecognizer.isAvailable else {
+            throw SpeechRecognizerError.unavailable
+        }
+
+        recognizer = speechRecognizer
+
+        let recognitionRequest =
+            SFSpeechAudioBufferRecognitionRequest()
+
+        recognitionRequest.shouldReportPartialResults = true
+
+        request = recognitionRequest
+
+        recognitionTask = speechRecognizer.recognitionTask(
+            with: recognitionRequest
+        ) { result, error in
+
+            let text = result?.bestTranscription.formattedString ?? ""
+            let isFinal = result?.isFinal ?? false
+
+            resultHandler(text, isFinal, error)
         }
     }
 
-    public func stopDictation() async throws {
-        request?.endAudio()
-        request = nil
-        speechRecognizerTask?.cancel()
-        speechRecognizerTask = nil
-    }
-
-    public func setupAudioEngineBuffer(_ buffer: AVAudioPCMBuffer) {
+    public func setupAudioEngineBuffer(
+        _ buffer: AVAudioPCMBuffer
+    ) {
         request?.append(buffer)
     }
+
+    public func stopDictation() {
+
+        request?.endAudio()
+        recognitionTask?.cancel()
+
+        recognitionTask = nil
+        request = nil
+        recognizer = nil
+    }
+
+    public func resetDictationResult() {
+        stopDictation()
+    }
+}
+
+public enum SpeechRecognizerError: Error {
+    case unavailable
 }
