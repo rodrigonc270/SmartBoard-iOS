@@ -1,104 +1,109 @@
+
 //
 //  HomeScreen.swift
-//  KeyboardKit
+//  SmartBoard iOS
 //
-//  Created by Daniel Saidi on 2021-02-11.
-//  Copyright © 2021-2025 Daniel Saidi. All rights reserved.
+//  Tela inicial independente do KeyboardKitPro.
 //
 
-import KeyboardKitPro
 import SwiftUI
 
-/// This is the main demo app screen.
-///
-/// This view uses a KeyboardKit Pro `HomeScreen` to present
-/// keyboard status and settings links with some adjustments.
-///
-/// See ``DemoApp`` for important, demo-specific information
-/// on why the in-app keyboard settings aren't synced to the
-/// keyboards by default, and how you can enable this.
 struct HomeScreen: View {
 
-    let app = KeyboardApp.keyboardKitDemo
-
-    @State var text = ""
-    @State var textEmail = ""
-    @State var textMultiline = ""
-    @State var textNumberPad = ""
-    @State var textURL = ""
-    @State var textWebSearch = ""
-
-    @Environment(\.openURL) var openURL
-
-    @EnvironmentObject var dictationContext: DictationContext
-    @EnvironmentObject var keyboardContext: KeyboardContext
+    @State private var text = ""
+    @State private var textEmail = ""
+    @State private var textNumberPad = ""
+    @State private var textURL = ""
+    @State private var textWebSearch = ""
+    @State private var textMultiline = ""
 
     var body: some View {
-        NavigationView {
-            KeyboardApp.HomeScreen(
-                app: app,
-                appIcon: Image(.icon),
-                header: {},
-                footer: {
-                    Section("Section.TextFields") {
-                        TextField("TextField.Plain", text: $text)
-                            .keyboardType(.default)
-                        TextField("TextField.Email", text: $textEmail)
-                            .keyboardType(.emailAddress)
-                        TextField("TextField.NumberPad", text: $textNumberPad)
-                            .keyboardType(.numberPad)
-                        TextField("TextField.URL", text: $textURL)
-                            .keyboardType(.URL)
-                        TextField("TextField.WebSearch", text: $textWebSearch)
-                            .keyboardType(.webSearch)
-                        TextField("TextField.Multiline", text: $textMultiline, axis: .vertical)
-                            .lineLimit(4, reservesSpace: true)
-                            .keyboardType(.default)
-                    }
-                }
-            )
-            .navigationTitle(app.name)
-        }
-        .keyboardAppHomeScreenLocalization(.init(
-            keyboardSectionFooter: """
-OBS! This demo isn't code signed and therefore can't sync settings to its keyboard extensions!
-"""
-        ))
-        .keyboardAppHomeScreenStyle(.init(
-            appIconSize: 120,
-            appIconCornerRadius: 27
-        ))
-        .keyboardAppHomeScreenVisibility(.init(
-            keyboardSection: true,
-            keyboardSectionThemeSettings: true
-        ))
-        .keyboardDictation(
-            dictationContext: dictationContext,
-            keyboardContext: keyboardContext,
-            openUrl: openURL,
-            speechRecognizer: .standard,
-            overlay: dictationScreen
-        )
-        .navigationViewStyle(.stack)
-    }
-}
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(spacing: 12) {
+                        Image(systemName: "keyboard")
+                            .font(.system(size: 54))
+                            .foregroundStyle(.blue)
 
-extension HomeScreen {
-    
-    func dictationScreen() -> some View {
-        Dictation.Screen(
-            dictationContext: dictationContext,
-            titleView: { EmptyView() },
-            visualizer: { Dictation.BarVisualizer(isAnimating: $0) },
-            doneButton: { action in
-                Button("Button.Done", action: action)
-                    .buttonStyle(.borderedProminent)
+                        Text("SmartBoard")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+
+                        Text("Seu teclado personalizado para iOS")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                }
+
+                Section("Ativar o SmartBoard") {
+                    Text("1. Abra os Ajustes do iPhone.")
+                    Text("2. Acesse Geral > Teclado > Teclados.")
+                    Text("3. Toque em Adicionar Novo Teclado.")
+                    Text("4. Selecione SmartBoard, se estiver disponível.")
+                    Text("5. Abra um campo de texto e selecione o SmartBoard pelo botão de globo.")
+                }
+
+                Section("Teste de digitação") {
+                    TextField("Digite uma mensagem", text: $text)
+                        .textInputAutocapitalization(.sentences)
+
+                    TextField("E-mail", text: $textEmail)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+
+                    TextField("Número", text: $textNumberPad)
+                        .keyboardType(.numberPad)
+
+                    TextField("Endereço de site", text: $textURL)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+
+                    TextField("Pesquisa", text: $textWebSearch)
+                        .keyboardType(.webSearch)
+
+                    TextField(
+                        "Texto com várias linhas",
+                        text: $textMultiline,
+                        axis: .vertical
+                    )
+                    .lineLimit(4...8)
+                }
+
+                Section("Recursos planejados") {
+                    Label(
+                        "Português e inglês simultâneos",
+                        systemImage: "globe"
+                    )
+
+                    Label(
+                        "Linha numérica permanente",
+                        systemImage: "number"
+                    )
+
+                    Label(
+                        "Altura do teclado ajustável",
+                        systemImage: "arrow.up.and.down"
+                    )
+
+                    Label(
+                        "Sugestões e autocorreção bilíngues",
+                        systemImage: "textformat.abc"
+                    )
+                } footer: {
+                    Text(
+                        "Os recursos listados estão em desenvolvimento e ainda precisam ser implementados e testados."
+                    )
+                }
             }
-        )
+            .navigationTitle("SmartBoard")
+        }
     }
 }
 
 #Preview {
-    
     HomeScreen()
 }
