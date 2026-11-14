@@ -28,6 +28,12 @@ jobs:
           swift --version
           xcrun --sdk iphonesimulator --show-sdk-version
 
+      - name: Identificar esquemas do aplicativo
+        run: |
+          echo "=== Projetos e esquemas disponiveis ==="
+          xcodebuild -list \
+            -project Demo/Demo.xcodeproj
+
       - name: Resolver dependencias
         run: |
           swift package resolve
@@ -35,7 +41,6 @@ jobs:
       - name: Compilar OpenKeyboardKit para iOS
         run: |
           set -o pipefail
-
           xcodebuild build \
             -scheme OpenKeyboardKit \
             -configuration Debug \
