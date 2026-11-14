@@ -902,7 +902,7 @@
 		A9EAA6CA27B1527300BC9376 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = B00100000000000000000001 /* XCLocalSwiftPackageReference ".." */;
-			productName = KeyboardKit;
+			productName = OpenKeyboardKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
