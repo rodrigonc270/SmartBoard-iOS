@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-ios:
-    name: Compilar OpenKeyboardKit para iOS
+    name: Compilar SmartBoard para iOS
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -41,6 +41,7 @@ jobs:
       - name: Compilar OpenKeyboardKit para iOS
         run: |
           set -o pipefail
+
           xcodebuild build \
             -scheme OpenKeyboardKit \
             -configuration Debug \
@@ -48,12 +49,27 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
             CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee build.log
+            2>&1 | tee build-library.log
 
-      - name: Salvar log de compilacao
+      - name: Compilar aplicativo SmartBoard
+        run: |
+          set -o pipefail
+
+          xcodebuild build \
+            -project Demo/Demo.xcodeproj \
+            -scheme Demo \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build-app.log
+
+      - name: Salvar logs de compilacao
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smartboard-ios-build-log
-          path: build.log
+          name: smartboard-ios-build-logs
+          path: |
+            build-library.log
+            build-app.log
           if-no-files-found: ignore
