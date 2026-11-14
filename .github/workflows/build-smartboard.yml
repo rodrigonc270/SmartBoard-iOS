@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-ios:
-    name: Compilar OpenKeyboardKit
+    name: Compilar OpenKeyboardKit para iOS
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -26,20 +26,34 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
+          xcrun --sdk iphonesimulator --show-sdk-version
 
-      - name: Resolver dependencias Swift
+      - name: Resolver dependencias
         run: |
           swift package resolve
 
-      - name: Compilar biblioteca OpenKeyboardKit
+      - name: Listar schemes disponiveis
+        run: |
+          xcodebuild -list \
+            -packagePath .
+
+      - name: Compilar OpenKeyboardKit para iOS
         run: |
           set -o pipefail
-          swift build 2>&1 | tee build.log
+
+          xcodebuild build \
+            -scheme OpenKeyboardKit \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build.log
 
       - name: Salvar log de compilacao
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smartboard-build-log
+          name: smartboard-ios-build-log
           path: build.log
           if-no-files-found: ignore
