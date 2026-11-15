@@ -459,11 +459,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A921152825D58A94003510D9 /* HomeScreen.swift in Sources */,
-				A9DBBFE42CF3E72F007B48F4 /* DemoKeyboardMenu.swift in Sources */,
 				A921152625D58A94003510D9 /* DemoApp.swift in Sources */,
 				A96F413B2C73F2FE007344D2 /* KeyboardApp+Demo.swift in Sources */,
-				A9A58B812CF4C0EF004DC7BE /* StandardSpeechRecognizer.swift in Sources */,
-				A9DBBFF32CF476AE007B48F4 /* DemoSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
