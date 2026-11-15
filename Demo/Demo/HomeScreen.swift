@@ -20,9 +20,14 @@ struct HomeScreen: View {
     @State private var textWebSearch = ""
     @State private var textMultiline = ""
 
-    // MARK: - Configurações
+    // MARK: - Configurações compartilhadas
 
-    @AppStorage("smartboard.keyboardHeight")
+    @AppStorage(
+        "smartboard.keyboardHeight",
+        store: UserDefaults(
+            suiteName: "group.com.rodrigonc.smartboard"
+        )
+    )
     private var keyboardHeight = 65.0
 
     private let minimumHeight = 45.0
@@ -88,11 +93,9 @@ struct HomeScreen: View {
 
                         Spacer()
 
-                        Text(
-                            "\(Int(keyboardHeight)) pt"
-                        )
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                        Text("\(Int(keyboardHeight)) pt")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
 
                     Slider(
@@ -102,21 +105,9 @@ struct HomeScreen: View {
                     )
 
                     HStack(spacing: 8) {
-
-                        heightButton(
-                            "Compacto",
-                            height: 50
-                        )
-
-                        heightButton(
-                            "Padrão",
-                            height: 65
-                        )
-
-                        heightButton(
-                            "Grande",
-                            height: 75
-                        )
+                        heightButton("Compacto", height: 50)
+                        heightButton("Padrão", height: 65)
+                        heightButton("Grande", height: 75)
                     }
 
                     Button {
@@ -135,7 +126,7 @@ struct HomeScreen: View {
                     )
                 } footer: {
                     Text(
-                        "A preferência é salva neste aplicativo. A aplicação da altura ao teclado será ativada após configurarmos a comunicação com a extensão."
+                        "A altura selecionada é compartilhada com a extensão do SmartBoard. Após alterá-la, feche e reabra o teclado para aplicar a configuração."
                     )
                 }
 
