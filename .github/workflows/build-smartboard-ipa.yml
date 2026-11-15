@@ -1,0 +1,89 @@
+
+name: SmartBoard - Gerar IPA iOS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ipa:
+    name: Gerar SmartBoard IPA
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Baixar repositorio
+        uses: actions/checkout@v4
+
+      - name: Selecionar Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+
+      - name: Verificar ambiente
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Resolver dependencias
+        run: |
+          swift package resolve
+
+          xcodebuild -resolvePackageDependencies \
+            -project Demo/Demo.xcodeproj \
+            -scheme Demo
+
+      - name: Compilar para iPhone fisico
+        run: |
+          set -o pipefail
+
+          xcodebuild build \
+            -project Demo/Demo.xcodeproj \
+            -scheme Demo \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build-iphone.log
+
+      - name: Verificar extensao do teclado
+        run: |
+          set -e
+
+          APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
+
+          test -d "$APP"
+          test -d "$APP/PlugIns/Keyboard.appex"
+
+          echo "Aplicativo e extensao encontrados."
+
+      - name: Criar IPA
+        run: |
+          set -e
+
+          APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
+
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+
+          zip -qry SmartBoard.ipa Payload
+
+          unzip -l SmartBoard.ipa | grep "Keyboard.appex"
+
+      - name: Disponibilizar IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartBoard-iOS-IPA
+          path: SmartBoard.ipa
+          if-no-files-found: error
+
+      - name: Salvar logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartBoard-iOS-Logs
+          path: build-iphone.log
+          if-no-files-found: ignore
