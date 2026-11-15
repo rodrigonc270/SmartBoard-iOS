@@ -236,10 +236,10 @@ jobs:
           APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
           EXT="$APP/PlugIns/Keyboard.appex"
 
-          /usr/bin/codesign -d --entitlements \
+          /usr/bin/codesign -d --entitlements :- \
             "$APP" > "$RUNNER_TEMP/signing/app-signed.plist"
 
-          /usr/bin/codesign -d --entitlements \
+          /usr/bin/codesign -d --entitlements :- \
             "$EXT" > "$RUNNER_TEMP/signing/keyboard-signed.plist"
 
           python3 - <<'PY'
