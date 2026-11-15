@@ -28,28 +28,23 @@ jobs:
           swift --version
           xcrun --sdk iphonesimulator --show-sdk-version
 
-      - name: Identificar esquemas do aplicativo
+      - name: Verificar estrutura do projeto
         run: |
-          echo "=== Projetos e esquemas disponiveis ==="
+          ls -la
+          ls -la Demo
           xcodebuild -list \
             -project Demo/Demo.xcodeproj
 
-      - name: Resolver dependencias
+      - name: Resolver dependencias Swift Package
         run: |
           swift package resolve
 
-      - name: Compilar OpenKeyboardKit para iOS
+      - name: Resolver dependencias do projeto Xcode
         run: |
-          set -o pipefail
-
-          xcodebuild build \
-            -scheme OpenKeyboardKit \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee build-library.log
+          xcodebuild -resolvePackageDependencies \
+            -project Demo/Demo.xcodeproj \
+            -scheme Demo \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SmartBoardPackages"
 
       - name: Compilar aplicativo SmartBoard
         run: |
@@ -59,7 +54,9 @@ jobs:
             -project Demo/Demo.xcodeproj \
             -scheme Demo \
             -configuration Debug \
+            -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SmartBoardPackages" \
             -derivedDataPath "$RUNNER_TEMP/SmartBoardBuild" \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee build-app.log
@@ -70,6 +67,5 @@ jobs:
         with:
           name: smartboard-ios-build-logs
           path: |
-            build-library.log
             build-app.log
           if-no-files-found: ignore
