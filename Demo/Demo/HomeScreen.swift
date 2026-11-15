@@ -3,12 +3,15 @@
 //  HomeScreen.swift
 //  SmartBoard iOS
 //
-//  Tela inicial independente do KeyboardKitPro.
+//  Tela inicial e configurações do SmartBoard.
+//  Independente do KeyboardKitPro.
 //
 
 import SwiftUI
 
 struct HomeScreen: View {
+
+    // MARK: - Campos de teste
 
     @State private var text = ""
     @State private var textEmail = ""
@@ -16,6 +19,14 @@ struct HomeScreen: View {
     @State private var textURL = ""
     @State private var textWebSearch = ""
     @State private var textMultiline = ""
+
+    // MARK: - Configurações
+
+    @AppStorage("smartboard.keyboardHeight")
+    private var keyboardHeight = 65.0
+
+    private let minimumHeight = 45.0
+    private let maximumHeight = 80.0
 
     var body: some View {
         NavigationStack {
@@ -58,7 +69,7 @@ struct HomeScreen: View {
                     )
 
                     Text(
-                        "4. Selecione SmartBoard, se estiver disponível."
+                        "4. Selecione SmartBoard."
                     )
 
                     Text(
@@ -68,9 +79,70 @@ struct HomeScreen: View {
                     Text("Ativar o SmartBoard")
                 }
 
+                // MARK: - Altura do teclado
+
+                Section {
+
+                    HStack {
+                        Text("Altura selecionada")
+
+                        Spacer()
+
+                        Text(
+                            "\(Int(keyboardHeight)) pt"
+                        )
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    }
+
+                    Slider(
+                        value: $keyboardHeight,
+                        in: minimumHeight...maximumHeight,
+                        step: 1
+                    )
+
+                    HStack(spacing: 8) {
+
+                        heightButton(
+                            "Compacto",
+                            height: 50
+                        )
+
+                        heightButton(
+                            "Padrão",
+                            height: 65
+                        )
+
+                        heightButton(
+                            "Grande",
+                            height: 75
+                        )
+                    }
+
+                    Button {
+                        keyboardHeight = 65
+                    } label: {
+                        Label(
+                            "Restaurar altura padrão",
+                            systemImage: "arrow.counterclockwise"
+                        )
+                    }
+
+                } header: {
+                    Label(
+                        "Altura do teclado",
+                        systemImage: "arrow.up.and.down"
+                    )
+                } footer: {
+                    Text(
+                        "A preferência é salva neste aplicativo. A aplicação da altura ao teclado será ativada após configurarmos a comunicação com a extensão."
+                    )
+                }
+
                 // MARK: - Teste de digitação
 
                 Section {
+
                     TextField(
                         "Digite uma mensagem",
                         text: $text
@@ -114,9 +186,14 @@ struct HomeScreen: View {
                     Text("Teste de digitação")
                 }
 
-                // MARK: - Recursos planejados
+                // MARK: - Recursos
 
                 Section {
+
+                    Label(
+                        "Linha numérica permanente — funcionando",
+                        systemImage: "number"
+                    )
 
                     Label(
                         "Português e inglês simultâneos",
@@ -124,18 +201,13 @@ struct HomeScreen: View {
                     )
 
                     Label(
-                        "Linha numérica permanente",
-                        systemImage: "number"
-                    )
-
-                    Label(
-                        "Altura do teclado ajustável",
-                        systemImage: "arrow.up.and.down"
-                    )
-
-                    Label(
                         "Sugestões e autocorreção bilíngues",
                         systemImage: "textformat.abc"
+                    )
+
+                    Label(
+                        "Digitação por gestos (Swipe)",
+                        systemImage: "hand.draw"
                     )
 
                     Label(
@@ -149,15 +221,46 @@ struct HomeScreen: View {
                     )
 
                 } header: {
-                    Text("Recursos planejados")
+                    Text("Recursos do SmartBoard")
                 } footer: {
                     Text(
-                        "Os recursos listados estão em desenvolvimento e ainda precisam ser implementados e testados."
+                        "A linha numérica já está funcionando. Os demais recursos listados ainda estão em desenvolvimento."
                     )
                 }
             }
             .navigationTitle("SmartBoard")
         }
+    }
+
+    // MARK: - Botões de altura
+
+    private func heightButton(
+        _ title: String,
+        height: Double
+    ) -> some View {
+
+        Button {
+            keyboardHeight = height
+        } label: {
+            Text(title)
+                .font(.caption)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    keyboardHeight == height
+                    ? Color.accentColor.opacity(0.15)
+                    : Color.secondary.opacity(0.08)
+                )
+                .foregroundStyle(
+                    keyboardHeight == height
+                    ? Color.accentColor
+                    : Color.primary
+                )
+                .clipShape(
+                    RoundedRectangle(cornerRadius: 8)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
