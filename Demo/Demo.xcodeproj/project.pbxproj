@@ -67,7 +67,6 @@
 			dstSubfolderSpec = 13;
 			files = (
 				A921154025D58AC7003510D9 /* Keyboard.appex in Embed Foundation Extensions */,
-				A93342D4299A855F008FAA95 /* KeyboardPro.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -113,7 +112,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A9EAA6CB27B1527300BC9376 /* OpenKeyboardKit in Frameworks */,
-				A91EA8582E3124F300A69BDB /* KeyboardKitPro in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,12 +321,10 @@
 			);
 			dependencies = (
 				A921153F25D58AC7003510D9 /* PBXTargetDependency */,
-				A93342D3299A855F008FAA95 /* PBXTargetDependency */,
 			);
 			name = Demo;
 			packageProductDependencies = (
 				A9EAA6CA27B1527300BC9376 /* OpenKeyboardKit */,
-				A91EA8572E3124F300A69BDB /* KeyboardKitPro */,
 			);
 			productName = Demo;
 			productReference = A921152225D58A94003510D9 /* Demo.app */;
@@ -413,7 +409,6 @@
 			targets = (
 				A921152125D58A94003510D9 /* Demo */,
 				A921153825D58AC7003510D9 /* Keyboard */,
-				A93342CC299A855F008FAA95 /* KeyboardPro */,
 			);
 		};
 /* End PBXProject section */
