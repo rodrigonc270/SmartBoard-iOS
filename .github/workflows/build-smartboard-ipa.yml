@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-ipa:
-    name: Gerar SmartBoard IPA
+    name: Compilar e assinar SmartBoard
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -27,6 +27,146 @@ jobs:
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
+      - name: Preparar certificado e perfis
+        shell: bash
+        env:
+          P12_BASE64: ${{ secrets.P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          PROFILE_APP_BASE64: ${{ secrets.PROFILE_APP_BASE64 }}
+          PROFILE_KEYBOARD_BASE64: ${{ secrets.PROFILE_KEYBOARD_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/signing"
+          chmod 700 "$RUNNER_TEMP/signing"
+
+          printf '%s' "$P12_BASE64" | base64 -D \
+            > "$RUNNER_TEMP/signing/cert.p12"
+
+          printf '%s' "$PROFILE_APP_BASE64" | base64 -D \
+            > "$RUNNER_TEMP/signing/app.mobileprovision"
+
+          printf '%s' "$PROFILE_KEYBOARD_BASE64" | base64 -D \
+            > "$RUNNER_TEMP/signing/keyboard.mobileprovision"
+
+          security cms -D \
+            -i "$RUNNER_TEMP/signing/app.mobileprovision" \
+            -o "$RUNNER_TEMP/signing/app.plist"
+
+          security cms -D \
+            -i "$RUNNER_TEMP/signing/keyboard.mobileprovision" \
+            -o "$RUNNER_TEMP/signing/keyboard.plist"
+
+          KEYCHAIN="$RUNNER_TEMP/signing/build.keychain-db"
+
+          security create-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
+          security unlock-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+
+          security import "$RUNNER_TEMP/signing/cert.p12" \
+            -k "$KEYCHAIN" \
+            -P "$P12_PASSWORD" \
+            -T /usr/bin/codesign
+
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$RUNNER_TEMP" "$KEYCHAIN"
+
+          security list-keychains -d user -s "$KEYCHAIN"
+
+          echo "Certificado e perfis preparados."
+
+      - name: Verificar perfis e certificado
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import plistlib
+          import re
+          import subprocess
+
+          root = os.environ["RUNNER_TEMP"] + "/signing"
+          group = "group.com.rodrigonc.smartboard"
+
+          profiles = [
+              ("app", "com.rodrigonc.smartboard"),
+              ("keyboard", "com.rodrigonc.smartboard.keyboard"),
+          ]
+
+          certificates = None
+
+          for name, bundle in profiles:
+              with open(f"{root}/{name}.plist", "rb") as f:
+                  profile = plistlib.load(f)
+
+              ent = profile["Entitlements"]
+              app_id = ent["application-identifier"]
+
+              if not app_id.endswith("." + bundle):
+                  raise SystemExit(
+                      f"Bundle ID incorreto no perfil {name}: {app_id}"
+                  )
+
+              if group not in ent.get(
+                  "com.apple.security.application-groups", []
+              ):
+                  raise SystemExit(
+                      f"App Group ausente no perfil {name}"
+                  )
+
+              if profile.get("ProvisionsAllDevices", False):
+                  raise SystemExit("Perfil Enterprise inesperado")
+
+              if not profile.get("ProvisionedDevices"):
+                  raise SystemExit("Perfil sem dispositivos autorizados")
+
+              if ent.get("get-task-allow", False):
+                  raise SystemExit("Esperado perfil de distribuicao")
+
+              hashes = {
+                  hashlib.sha1(cert).hexdigest().upper()
+                  for cert in profile["DeveloperCertificates"]
+              }
+
+              certificates = (
+                  hashes if certificates is None
+                  else certificates & hashes
+              )
+
+              print(f"Perfil {name}: Bundle ID e App Group OK")
+
+          keychain = f"{root}/build.keychain-db"
+
+          result = subprocess.check_output(
+              ["security", "find-identity", "-v",
+               "-p", "codesigning", keychain],
+              text=True
+          )
+
+          identities = set(
+              re.findall(r"\b[A-F0-9]{40}\b", result)
+          )
+
+          matches = identities & certificates
+
+          if len(matches) != 1:
+              raise SystemExit(
+                  "Nao foi encontrada uma identidade unica "
+                  "compativel com ambos os perfis. "
+                  "Verifique o P12 e os perfis Ad Hoc."
+              )
+
+          identity = matches.pop()
+
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write(f"SIGN_IDENTITY={identity}\n")
+
+          print("Identidade de assinatura compativel: OK")
+          PY
+
       - name: Resolver dependencias
         run: |
           swift package resolve
@@ -36,6 +176,7 @@ jobs:
             -scheme Demo
 
       - name: Compilar para iPhone fisico
+        shell: bash
         run: |
           set -o pipefail
 
@@ -49,35 +190,139 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee build-iphone.log
 
-      - name: Verificar extensao do teclado
+      - name: Incorporar perfis e assinar
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
+          EXT="$APP/PlugIns/Keyboard.appex"
 
           test -d "$APP"
-          test -d "$APP/PlugIns/Keyboard.appex"
+          test -d "$EXT"
 
-          echo "Aplicativo e extensao encontrados."
+          cp "$RUNNER_TEMP/signing/app.mobileprovision" \
+            "$APP/embedded.mobileprovision"
 
-      - name: Criar IPA
+          cp "$RUNNER_TEMP/signing/keyboard.mobileprovision" \
+            "$EXT/embedded.mobileprovision"
+
+          # Assinar primeiro os componentes internos.
+          /usr/bin/codesign --force \
+            --sign "$SIGN_IDENTITY" \
+            --keychain "$RUNNER_TEMP/signing/build.keychain-db" \
+            --entitlements Demo/Keyboard/Keyboard.entitlements \
+            --generate-entitlement-der \
+            "$EXT"
+
+          # Assinar o aplicativo principal por ultimo.
+          /usr/bin/codesign --force \
+            --sign "$SIGN_IDENTITY" \
+            --keychain "$RUNNER_TEMP/signing/build.keychain-db" \
+            --entitlements Demo/Demo/SmartBoard.entitlements \
+            --generate-entitlement-der \
+            "$APP"
+
+          /usr/bin/codesign --verify --strict --verbose=2 "$EXT"
+          /usr/bin/codesign --verify --strict --verbose=2 "$APP"
+
+          echo "Aplicativo e extensao assinados."
+
+      - name: Validar assinatura final
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
+
+          APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
+          EXT="$APP/PlugIns/Keyboard.appex"
+
+          /usr/bin/codesign -d --entitlements \
+            "$APP" > "$RUNNER_TEMP/signing/app-signed.plist"
+
+          /usr/bin/codesign -d --entitlements \
+            "$EXT" > "$RUNNER_TEMP/signing/keyboard-signed.plist"
+
+          python3 - <<'PY'
+          import os
+          import plistlib
+          import subprocess
+
+          root = os.environ["RUNNER_TEMP"]
+          signing = root + "/signing"
+          app = root + "/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
+          ext = app + "/PlugIns/Keyboard.appex"
+          group = "group.com.rodrigonc.smartboard"
+
+          for name, path, bundle in [
+              ("app", app, "com.rodrigonc.smartboard"),
+              ("keyboard", ext, "com.rodrigonc.smartboard.keyboard"),
+          ]:
+              with open(path + "/Info.plist", "rb") as f:
+                  info = plistlib.load(f)
+
+              with open(f"{signing}/{name}.plist", "rb") as f:
+                  profile = plistlib.load(f)
+
+              with open(f"{signing}/{name}-signed.plist", "rb") as f:
+                  signed = plistlib.load(f)
+
+              with open(path + "/embedded.mobileprovision", "rb") as f:
+                  embedded = f.read()
+
+              with open(f"{signing}/{name}.mobileprovision", "rb") as f:
+                  expected = f.read()
+
+              if embedded != expected:
+                  raise SystemExit(f"Perfil incorporado incorreto: {name}")
+
+              if info["CFBundleIdentifier"] != bundle:
+                  raise SystemExit(f"Bundle ID incorreto: {name}")
+
+              expected_ent = profile["Entitlements"]
+
+              for key in [
+                  "application-identifier",
+                  "com.apple.developer.team-identifier",
+                  "com.apple.security.application-groups",
+              ]:
+                  if signed.get(key) != expected_ent.get(key):
+                      raise SystemExit(
+                          f"Entitlement incorreto em {name}: {key}"
+                      )
+
+              if group not in signed[
+                  "com.apple.security.application-groups"
+              ]:
+                  raise SystemExit(f"App Group ausente: {name}")
+
+              print(f"{name}: assinatura e perfil corretos")
+
+          print("Validacao final concluida.")
+          PY
+
+      - name: Criar IPA assinado
+        shell: bash
+        run: |
+          set -euo pipefail
 
           APP="$RUNNER_TEMP/SmartBoardBuild/Build/Products/Release-iphoneos/Demo.app"
 
-          mkdir -p Payload
-          cp -R "$APP" Payload/
+          mkdir -p "$RUNNER_TEMP/package/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/package/Payload/"
 
-          zip -qry SmartBoard.ipa Payload
+          cd "$RUNNER_TEMP/package"
+          zip -qry "$GITHUB_WORKSPACE/SmartBoard-Signed.ipa" Payload
 
-          unzip -l SmartBoard.ipa | grep "Keyboard.appex"
+          unzip -l "$GITHUB_WORKSPACE/SmartBoard-Signed.ipa" \
+            | grep "Keyboard.appex/embedded.mobileprovision"
+
+          echo "IPA assinado gerado com sucesso."
 
       - name: Disponibilizar IPA
         uses: actions/upload-artifact@v4
         with:
-          name: SmartBoard-iOS-IPA
-          path: SmartBoard.ipa
+          name: SmartBoard-iOS-Signed-IPA
+          path: SmartBoard-Signed.ipa
           if-no-files-found: error
 
       - name: Salvar logs
@@ -87,3 +332,13 @@ jobs:
           name: SmartBoard-iOS-Logs
           path: build-iphone.log
           if-no-files-found: ignore
+
+      - name: Limpar chaveiro temporario
+        if: always()
+        shell: bash
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing/build.keychain-db"
+          if [ -f "$KEYCHAIN" ]; then
+            security delete-keychain "$KEYCHAIN" || true
+          fi
+          rm -rf "$RUNNER_TEMP/signing"
