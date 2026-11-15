@@ -4,7 +4,7 @@
 //  SmartBoard iOS
 //
 //  Baseado no OpenKeyboardKit
-//  Personalização inicial do SmartBoard
+//  Altura configurável e linha numérica permanente
 //
 
 import OpenKeyboardKit
@@ -17,6 +17,16 @@ struct DemoKeyboardView: View {
     let state: Keyboard.State
 
     @EnvironmentObject var keyboardContext: KeyboardContext
+
+    // MARK: - Preferências compartilhadas
+
+    @AppStorage(
+        "smartboard.keyboardHeight",
+        store: UserDefaults(
+            suiteName: "group.com.rodrigonc.smartboard"
+        )
+    )
+    private var keyboardHeight = 65.0
 
     var body: some View {
         KeyboardView(
@@ -66,9 +76,14 @@ private extension DemoKeyboardView {
             for: keyboardContext
         )
 
-        // SmartBoard: altura inicial das teclas.
-        // Valor experimental em pontos.
-        layout.idealItemHeight = 65
+        // Aplica a altura selecionada no SmartBoard.
+        // Limita o valor ao intervalo permitido.
+        let selectedHeight = min(
+            max(keyboardHeight, 45),
+            80
+        )
+
+        layout.idealItemHeight = selectedHeight
 
         // Adiciona os números somente
         // quando o teclado é alfabético.
