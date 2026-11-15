@@ -207,11 +207,27 @@ jobs:
           cp "$RUNNER_TEMP/signing/keyboard.mobileprovision" \
             "$EXT/embedded.mobileprovision"
 
+          # Gerar entitlements de assinatura a partir dos perfis Ad Hoc.
+          # Os perfis ja foram validados na etapa anterior.
+          python3 - <<'PYENT'
+          import os
+          import plistlib
+
+          signing = os.path.join(os.environ["RUNNER_TEMP"], "signing")
+          for name in ("app", "keyboard"):
+              with open(os.path.join(signing, f"{name}.plist"), "rb") as f:
+                  profile = plistlib.load(f)
+              entitlements = profile["Entitlements"]
+              with open(os.path.join(signing, f"{name}-entitlements.plist"), "wb") as f:
+                  plistlib.dump(entitlements, f)
+              print(f"Entitlements do perfil {name} preparados.")
+          PYENT
+
           # Assinar primeiro os componentes internos.
           /usr/bin/codesign --force \
             --sign "$SIGN_IDENTITY" \
             --keychain "$RUNNER_TEMP/signing/build.keychain-db" \
-            --entitlements Demo/Keyboard/Keyboard.entitlements \
+            --entitlements "$RUNNER_TEMP/signing/keyboard-entitlements.plist" \
             --generate-entitlement-der \
             "$EXT"
 
@@ -219,7 +235,7 @@ jobs:
           /usr/bin/codesign --force \
             --sign "$SIGN_IDENTITY" \
             --keychain "$RUNNER_TEMP/signing/build.keychain-db" \
-            --entitlements Demo/Demo/SmartBoard.entitlements \
+            --entitlements "$RUNNER_TEMP/signing/app-entitlements.plist" \
             --generate-entitlement-der \
             "$APP"
 
