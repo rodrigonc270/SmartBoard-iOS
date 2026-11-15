@@ -20,6 +20,9 @@ struct HomeScreen: View {
     var body: some View {
         NavigationStack {
             Form {
+
+                // MARK: - Apresentação
+
                 Section {
                     VStack(spacing: 12) {
                         Image(systemName: "keyboard")
@@ -30,40 +33,75 @@ struct HomeScreen: View {
                             .font(.largeTitle)
                             .fontWeight(.bold)
 
-                        Text("Seu teclado personalizado para iOS")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                        Text(
+                            "Seu teclado personalizado para iOS"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
                 }
 
-                Section("Ativar o SmartBoard") {
+                // MARK: - Ativação
+
+                Section {
                     Text("1. Abra os Ajustes do iPhone.")
-                    Text("2. Acesse Geral > Teclado > Teclados.")
-                    Text("3. Toque em Adicionar Novo Teclado.")
-                    Text("4. Selecione SmartBoard, se estiver disponível.")
-                    Text("5. Abra um campo de texto e selecione o SmartBoard pelo botão de globo.")
+
+                    Text(
+                        "2. Acesse Geral > Teclado > Teclados."
+                    )
+
+                    Text(
+                        "3. Toque em Adicionar Novo Teclado."
+                    )
+
+                    Text(
+                        "4. Selecione SmartBoard, se estiver disponível."
+                    )
+
+                    Text(
+                        "5. Abra um campo de texto e selecione o SmartBoard pelo botão de globo."
+                    )
+                } header: {
+                    Text("Ativar o SmartBoard")
                 }
 
-                Section("Teste de digitação") {
-                    TextField("Digite uma mensagem", text: $text)
-                        .textInputAutocapitalization(.sentences)
+                // MARK: - Teste de digitação
 
-                    TextField("E-mail", text: $textEmail)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
+                Section {
+                    TextField(
+                        "Digite uma mensagem",
+                        text: $text
+                    )
+                    .textInputAutocapitalization(.sentences)
 
-                    TextField("Número", text: $textNumberPad)
-                        .keyboardType(.numberPad)
+                    TextField(
+                        "E-mail",
+                        text: $textEmail
+                    )
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
 
-                    TextField("Endereço de site", text: $textURL)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
+                    TextField(
+                        "Número",
+                        text: $textNumberPad
+                    )
+                    .keyboardType(.numberPad)
 
-                    TextField("Pesquisa", text: $textWebSearch)
-                        .keyboardType(.webSearch)
+                    TextField(
+                        "Endereço de site",
+                        text: $textURL
+                    )
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+
+                    TextField(
+                        "Pesquisa",
+                        text: $textWebSearch
+                    )
+                    .keyboardType(.webSearch)
 
                     TextField(
                         "Texto com várias linhas",
@@ -71,9 +109,15 @@ struct HomeScreen: View {
                         axis: .vertical
                     )
                     .lineLimit(4...8)
+
+                } header: {
+                    Text("Teste de digitação")
                 }
 
-                Section("Recursos planejados") {
+                // MARK: - Recursos planejados
+
+                Section {
+
                     Label(
                         "Português e inglês simultâneos",
                         systemImage: "globe"
@@ -93,6 +137,19 @@ struct HomeScreen: View {
                         "Sugestões e autocorreção bilíngues",
                         systemImage: "textformat.abc"
                     )
+
+                    Label(
+                        "Correção automática por IA",
+                        systemImage: "sparkles"
+                    )
+
+                    Label(
+                        "Correção por IA sob demanda",
+                        systemImage: "wand.and.stars"
+                    )
+
+                } header: {
+                    Text("Recursos planejados")
                 } footer: {
                     Text(
                         "Os recursos listados estão em desenvolvimento e ainda precisam ser implementados e testados."
